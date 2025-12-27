@@ -1,40 +1,167 @@
 import NextAuth from "next-auth"
+import { OIDCConfig, OIDCUserConfig } from "next-auth/providers";
+import Keycloak from "next-auth/providers/keycloak";
+import { refreshAccessToken } from "./lib/auth/refresh-token";
+import { isTokenExpired } from "./lib/auth/token-utils";
+import { TOKEN_EXPIRATION_BUFFER_SECONDS } from "./lib/auth/constants";
 //import GitHub from "next-auth/providers/github";
 
+export interface AuthioProfile extends Record<string, any> {
+  exp: number
+  iat: number
+  auth_time: number
+  jti: string
+  iss: string
+  aud: string
+  sub: string
+  typ: string
+  azp: string
+  session_state: string
+  at_hash: string
+  acr: string
+  sid: string
+  email_verified: boolean
+  name: string
+  preferred_username: string
+  given_name: string
+  family_name: string
+  email: string
+  picture: string
+  user: any
+}
+
+/**
+ * Add Keycloak login to your page.
+ *
+ * ### Setup
+ *
+ * #### Callback URL
+ * ```
+ * https://example.com/api/auth/callback/keycloak
+ * ```
+ *
+ * #### Configuration
+ *```ts
+ * import { Auth } from "@auth/core"
+ * import Keycloak from "@auth/core/providers/keycloak"
+ *
+ * const request = new Request(origin)
+ * const response = await Auth(request, {
+ *   providers: [
+ *     Keycloak({
+ *       clientId: KEYCLOAK_CLIENT_ID,
+ *       clientSecret: KEYCLOAK_CLIENT_SECRET,
+ *       issuer: KEYCLOAK_ISSUER,
+ *     }),
+ *   ],
+ * })
+ * ```
+ *
+ * ### Resources
+ *
+ *  - [Keycloak OIDC documentation](https://www.keycloak.org/docs/latest/server_admin/#_oidc_clients)
+ *
+ * :::tip
+ *
+ * Create an openid-connect client in Keycloak with "confidential" as the "Access Type".
+ *
+ * :::
+ *
+ * :::note
+ *
+ * issuer should include the realm – e.g. https://my-keycloak-domain.com/realms/My_Realm
+ *
+ * :::
+ * ### Notes
+ *
+ * By default, Auth.js assumes that the Keycloak provider is
+ * based on the [Open ID Connect](https://openid.net/specs/openid-connect-core-1_0.html) specification.
+ *
+ * :::tip
+ *
+ * The Keycloak provider comes with a [default configuration](https://github.com/nextauthjs/next-auth/blob/main/packages/core/src/providers/keycloak.ts).
+ * To override the defaults for your use case, check out [customizing a built-in OAuth provider](https://authjs.dev/guides/configuring-oauth-providers).
+ *
+ * :::
+ *
+ * :::info **Disclaimer**
+ *
+ * If you think you found a bug in the default configuration, you can [open an issue](https://authjs.dev/new/provider-issue).
+ *
+ * Auth.js strictly adheres to the specification and it cannot take responsibility for any deviation from
+ * the spec by the provider. You can open an issue, but if the problem is non-compliance with the spec,
+ * we might not pursue a resolution. You can ask for more help in [Discussions](https://authjs.dev/new/github-discussions).
+ *
+ * :::
+ */
+export default function Authio<P extends AuthioProfile>(
+  options: OIDCUserConfig<P>
+): OIDCConfig<P> {
+  debugger
+  return {
+    id: "Authio",
+    name: "Authio",
+    type: "oidc",
+    style: { brandColor: "#428bca" },
+    options,
+  }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  debug: true,
   providers: [
-    //GitHub, // Example when using existing provider from next-auth
-    {
-      id: 'custom_oidc_provider', // Unique identifier for the provider
-      name: 'Custom OIDC Provider', // Name of the provider
-      type: 'oidc', // Provider type
-      issuer: process.env.AUTH_OIDC_ISSUER, // Issuer URL from environment variable
-      clientId: process.env.AUTH_OIDC_CLIENT_ID, // Client ID for authentication from environment variable
-      clientSecret: process.env.AUTH_OIDC_CLIENT_SECRET, // Client Secret for authentication from environment variable
-      profile(profile) {
-        // Log essential information when a user logs in
-        console.log('User logged in', { userId: profile.sub });
-        return {
-          id: profile.sub, // User ID from the profile
-          username: profile.sub?.toLowerCase(), // Username (converted to lowercase)
-          name: `${profile.given_name} ${profile.family_name}`, // Full name from given and family names
-          email: profile.email, // User email
-        };
-      }
-    }
+    Authio({
+      issuer: process.env.NEXT_PUBLIC_AUTH_OIDC_ISSUER,
+      clientId: process.env.AUTHIO_ID,
+      clientSecret: process.env.AUTH_SECRET,
+      checks: ['pkce', 'state', 'nonce'],
+      authorization: { params: { scope: "openid email profile" } },
+    })
   ],
-  pages: {
-    error: '/sign-in', // Redirect to the home page (or other page) on error
-    signIn: '/sign-in', // Redirect to the home page (or other page) for sign-in
-    signOut: '/sign-in', // Redirect to the home page (or other page) after sign-out
-  },
+  secret: process.env.AUTH_SECRET,
   callbacks: {
-    jwt({ token, user }) {
-      if(user) token.username = user.username
-      return token
+    async jwt({ token, user, account }) {
+      debugger
+      
+      // Initial sign in - store tokens from account
+      if (account && user) {
+        console.log('[Auth] Initial sign in, storing tokens')
+        token.username = user.username
+        token.accessToken = account.access_token
+        token.refreshToken = account.refresh_token
+        token.idToken = account.id_token
+        token.accessTokenExpires = account.expires_at 
+          ? account.expires_at * 1000 
+          : Date.now() + (account.expires_in || 3600) * 1000
+        return token
+      }
+
+      // Token is still valid, return it as is
+      if (token.accessTokenExpires && !isTokenExpired(token.accessTokenExpires, TOKEN_EXPIRATION_BUFFER_SECONDS)) {
+        console.log('[Auth] Token still valid')
+        return token
+      }
+
+      // Token is expired or about to expire, refresh it
+      console.log('[Auth] Token expired or expiring soon, refreshing...')
+      const refreshedToken = await refreshAccessToken(token)
+      return refreshedToken
     },
     session({ session, token }) {
+      debugger
+      
+      // Pass user info to session
       session.user.username = token.username
+      session.user.id = token.sub || ''
+      session.user.name = token.name || ''
+      session.user.email = token.email || ''
+      session.id_token = token.idToken
+      
+      // Pass error to session if token refresh failed
+      if (token.error) {
+        session.error = token.error
+      }
+      
       return session
     }
   }

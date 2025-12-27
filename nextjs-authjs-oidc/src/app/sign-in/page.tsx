@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
 
 export default function SignInPage() {
-  const handleSignIn = () => signIn('custom_oidc_provider');
+  debugger
+  const handleSignIn = () => signIn('Authio');
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">

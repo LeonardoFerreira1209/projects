@@ -3,6 +3,7 @@ import { DEFAULT_REDIRECT, PUBLIC_ROUTES, ROOT } from "@/lib/routes";
 
 // Or like this if you need to do something here.
 export default auth((req) => {
+  debugger
   const { nextUrl } = req; // Extract the nextUrl (requested URL) from the request object
 
   // Check if the user is authenticated (i.e., if the 'auth' property exists in the request)

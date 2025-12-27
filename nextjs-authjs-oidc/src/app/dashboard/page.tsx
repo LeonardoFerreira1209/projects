@@ -3,7 +3,6 @@ import { Header } from '@/components/header';
 
 const DashboardPage = async () => {
   const session = await auth();
-
   return (
     <div>
       <Header />
@@ -11,6 +10,9 @@ const DashboardPage = async () => {
         <h1 className='text-2xl font-semibold'>Dashboard</h1>
         <p>User session:</p>
         <p className='text-sm'>{JSON.stringify(session?.user)}</p>
+
+        <p>User session expires:</p>
+        <p className='text-sm'>{JSON.stringify(session?.expires)}</p>
       </div>
     </div>
   );

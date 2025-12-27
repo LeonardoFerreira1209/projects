@@ -1,18 +1,5 @@
-import { auth, signOut } from '@/auth'
-import { Button } from "@/components/ui/button"
-
-function SignOutButton() {
-  return (
-    <form
-      action={async () => {
-        'use server'
-        await signOut()
-      }}
-    >
-      <Button type="submit" variant="outline">Sign out</Button>
-    </form>
-  )
-}
+import { auth } from "@/auth"
+import SignOutButton from "./ui/signOutButton"
 
 export async function Header() {
   const session = await auth()

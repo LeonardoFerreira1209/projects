@@ -40,7 +40,7 @@ To get a local copy up and running, follow these steps.
    ```sh
    AUTH_OIDC_CLIENT_ID= # The client ID for your OIDC provider.    
    AUTH_OIDC_CLIENT_SECRET= # The client secret for your OIDC provider.    
-   AUTH_OIDC_ISSUER= # The OIDC provider's issuer URL.
+   NEXT_PUBLIC_AUTH_OIDC_ISSUER= # The OIDC provider's issuer URL.
    ```
 5. Run the application
    ```sh
