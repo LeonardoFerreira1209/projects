@@ -1,11 +1,11 @@
 import NextAuth from "next-auth"
 import { OIDCConfig, OIDCUserConfig } from "next-auth/providers";
-import Keycloak from "next-auth/providers/keycloak";
 import { refreshAccessToken } from "./lib/auth/refresh-token";
 import { isTokenExpired } from "./lib/auth/token-utils";
 import { TOKEN_EXPIRATION_BUFFER_SECONDS } from "./lib/auth/constants";
 //import GitHub from "next-auth/providers/github";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface AuthioProfile extends Record<string, any> {
   exp: number
   iat: number
@@ -27,6 +27,7 @@ export interface AuthioProfile extends Record<string, any> {
   family_name: string
   email: string
   picture: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user: any
 }
 

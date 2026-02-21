@@ -80,6 +80,7 @@ export function isTokenExpired(
  * @param token - The JWT token to decode
  * @returns Decoded payload or null if invalid
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function decodeTokenPayload(token: string): any | null {
   try {
     const parts = token.split('.')
