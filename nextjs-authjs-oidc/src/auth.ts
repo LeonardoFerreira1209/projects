@@ -109,6 +109,7 @@ export default function Authio<P extends AuthioProfile>(
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   debug: true,
   providers: [
     Authio({
