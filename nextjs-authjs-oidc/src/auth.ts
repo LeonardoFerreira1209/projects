@@ -119,6 +119,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     })
   ],
   secret: process.env.AUTH_SECRET,
+  // pages: {
+  //   error: '/auth-error',
+  // },
   callbacks: {
     async jwt({ token, user, account }) {
       debugger
