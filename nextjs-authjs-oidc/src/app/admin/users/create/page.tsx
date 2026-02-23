@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createUserAction } from '@/app/admin/actions'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,14 @@ import { ArrowLeft, Loader2, UserPlus, X } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CreateUserPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}>
+      <CreateUserForm />
+    </Suspense>
+  )
+}
+
+function CreateUserForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
